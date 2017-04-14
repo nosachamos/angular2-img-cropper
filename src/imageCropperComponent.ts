@@ -1,9 +1,8 @@
-import {Component, Input, Renderer, ViewChild, ElementRef, Output, EventEmitter, Type, AfterViewInit, OnChanges, SimpleChanges} from '@angular/core';
-import {ImageCropper} from './imageCropper';
-import {CropperSettings} from './cropperSettings';
-import {Exif} from './exif';
-import {Bounds} from './model/bounds';
-import {CropPosition} from './model/cropPosition';
+import { Component, Input, Renderer, ViewChild, ElementRef, Output, EventEmitter, Type, AfterViewInit, OnChanges, SimpleChanges } from '@angular/core';
+import { ImageCropper } from './imageCropper';
+import { CropperSettings } from './cropperSettings';
+import { Bounds } from './model/bounds';
+import { CropPosition } from './model/cropPosition';
 
 @Component({
     selector: 'img-cropper',
@@ -156,7 +155,6 @@ export class ImageCropperComponent implements AfterViewInit, OnChanges {
                 image.width = image.naturalWidth;
 
                 clearInterval(self.intervalRef);
-                self.getOrientedImage(image, (img:HTMLImageElement) => {
                     if (this.settings.dynamicSizing) {
                         let canvas:HTMLCanvasElement = this.cropcanvas.nativeElement;
                         this.settings.canvasWidth = canvas.offsetWidth;
@@ -165,21 +163,20 @@ export class ImageCropperComponent implements AfterViewInit, OnChanges {
                     }
 
 
-                    self.cropper.setImage(img);
-                    if (self.cropPosition && self.cropPosition.isInitialized()) {
-                        self.cropper.updateCropPosition(self.cropPosition.toBounds());
-                    }
-                    self.image.original = img;
-                    let bounds = self.cropper.getCropBounds();
-                    self.image.image = self.cropper.getCroppedImage().src;
-                    if (newBounds != null) {
-                        bounds = newBounds;
-                        self.cropper.setBounds(bounds);
-                    }
-                    self.onCrop.emit(bounds);
-                });
+                self.cropper.setImage(image);
+                if (self.cropPosition && self.cropPosition.isInitialized()) {
+                    self.cropper.updateCropPosition(self.cropPosition.toBounds());
+                }
+                self.image.original = image;
+                let bounds = self.cropper.getCropBounds();
+                self.image.image = self.cropper.getCroppedImage().src;
+                if (newBounds != null) {
+                    bounds = newBounds;
+                    self.cropper.setBounds(bounds);
+                }
+                self.onCrop.emit(bounds);
             }
-        }, 10);
+        }, 30);
     }
 
     private isCropPositionChanged(changes:SimpleChanges):boolean {
@@ -197,58 +194,4 @@ export class ImageCropperComponent implements AfterViewInit, OnChanges {
         this.isCropPositionUpdateNeeded = false;
     }
 
-    private getOrientedImage(image:HTMLImageElement, callback:Function) {
-        let img:any;
-
-        Exif.getData(image, function () {
-            let orientation = Exif.getTag(image, 'Orientation');
-
-            if ([3, 6, 8].indexOf(orientation) > -1) {
-                let canvas:HTMLCanvasElement = document.createElement('canvas'),
-                    ctx:CanvasRenderingContext2D = <CanvasRenderingContext2D> canvas.getContext('2d'),
-                    cw:number = image.width,
-                    ch:number = image.height,
-                    cx:number = 0,
-                    cy:number = 0,
-                    deg:number = 0;
-
-                switch (orientation) {
-                    case 3:
-                        cx = -image.width;
-                        cy = -image.height;
-                        deg = 180;
-                        break;
-                    case 6:
-                        cw = image.height;
-                        ch = image.width;
-                        cy = -image.height;
-                        deg = 90;
-                        break;
-                    case 8:
-                        cw = image.height;
-                        ch = image.width;
-                        cx = -image.width;
-                        deg = 270;
-                        break;
-                    default:
-                        break;
-                }
-
-                canvas.width = cw;
-                canvas.height = ch;
-                ctx.rotate(deg * Math.PI / 180);
-                ctx.drawImage(image, cx, cy);
-                img = document.createElement('img');
-                img.width = cw;
-                img.height = ch;
-                img.addEventListener('load', function () {
-                    callback(img);
-                });
-                img.src = canvas.toDataURL('image/png');
-            } else {
-                img = image;
-                callback(img);
-            }
-        });
-    }
 }
